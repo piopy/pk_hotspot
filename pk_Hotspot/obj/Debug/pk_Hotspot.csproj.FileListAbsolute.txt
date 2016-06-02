@@ -1,0 +1,9 @@
+c:\users\anton\onedrive\documenti\visual studio 2015\Projects\pk_Hotspot\pk_Hotspot\bin\Debug\pk_Hotspot.exe.config
+c:\users\anton\onedrive\documenti\visual studio 2015\Projects\pk_Hotspot\pk_Hotspot\bin\Debug\pk_Hotspot.exe
+c:\users\anton\onedrive\documenti\visual studio 2015\Projects\pk_Hotspot\pk_Hotspot\bin\Debug\pk_Hotspot.pdb
+c:\users\anton\onedrive\documenti\visual studio 2015\Projects\pk_Hotspot\pk_Hotspot\obj\Debug\pk_Hotspot.csprojResolveAssemblyReference.cache
+c:\users\anton\onedrive\documenti\visual studio 2015\Projects\pk_Hotspot\pk_Hotspot\obj\Debug\pk_Hotspot.Form1.resources
+c:\users\anton\onedrive\documenti\visual studio 2015\Projects\pk_Hotspot\pk_Hotspot\obj\Debug\pk_Hotspot.Properties.Resources.resources
+c:\users\anton\onedrive\documenti\visual studio 2015\Projects\pk_Hotspot\pk_Hotspot\obj\Debug\pk_Hotspot.csproj.GenerateResource.Cache
+c:\users\anton\onedrive\documenti\visual studio 2015\Projects\pk_Hotspot\pk_Hotspot\obj\Debug\pk_Hotspot.exe
+c:\users\anton\onedrive\documenti\visual studio 2015\Projects\pk_Hotspot\pk_Hotspot\obj\Debug\pk_Hotspot.pdb
