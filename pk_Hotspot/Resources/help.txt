@@ -1,0 +1,15 @@
+// pk_Hotspot v 1.0
+// by BurningHAM18
+// Copyright (c) 2016, GPLv3 License
+
+README
+
+- To check if you can run a hotspot on you PC open "cmd" from Start menu and type
+
+	" netsh wlan show drivers "
+  just read if hosted network is supported or not
+
+- Go to Network Settings, select the Ethernet connection and cliick on "Properties"
+- In the "share" panel, you must check and share your Wi-Fi connection
+- Now you can use this software to create a Network ^^ 
+(Remember to start it as Administrator)
