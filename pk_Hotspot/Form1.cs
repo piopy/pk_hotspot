@@ -1,11 +1,15 @@
-﻿using MRJoiner.utility;
+﻿using Microsoft.Win32;
+using MRJoiner.utility;
+using NETCONLib;
 using System;
 using System.Collections.Generic;
 using System.ComponentModel;
 using System.Data;
+using System.Diagnostics;
 using System.Drawing;
 using System.IO;
 using System.Linq;
+using System.Net.NetworkInformation;
 using System.Security.Principal;
 using System.Text;
 using System.Threading.Tasks;
@@ -15,10 +19,13 @@ namespace pk_Hotspot
 {
     public partial class Form1 : Form
     {
+
+        NetworkInterface wifi;
         public Form1()
         {
             InitializeComponent();
-
+            // when resumeing from Sleep or hibernate
+            SystemEvents.PowerModeChanged += PowerModeChanged;
             MenuItem exit = new MenuItem();
             exit.Text = "Exit";
             exit.Click += new EventHandler(exitClick); ;
@@ -26,6 +33,7 @@ namespace pk_Hotspot
             ContextMenu menu = new ContextMenu();
             menu.MenuItems.Add(exit);
 
+            
             notifyIcon1.ContextMenu = menu;
 
             WindowsIdentity identity = WindowsIdentity.GetCurrent();
@@ -35,6 +43,45 @@ namespace pk_Hotspot
             {
                 button1.Enabled = false;
                 MessageBox.Show("Please restart as Administrator");
+                Close();
+            }
+            
+            
+        }
+
+        private void changeStatus()
+        {
+            if (status.Text == "Started")
+            {
+                status.ForeColor = Color.Red;
+                status.Text = "Stopped";
+            }
+            else
+            {
+                status.ForeColor = Color.Green;
+                status.Text = "Started";
+            }
+        }
+
+        private void PowerModeChanged(object sender, PowerModeChangedEventArgs e)
+        {
+            // when resuming from hibernate or sleep mode
+            if (e.Mode == PowerModes.Resume)
+            {
+                if (button1.Text == "Stop")
+                {
+
+                    cmd.runCommand("netsh wlan stop hostednetwork");
+                    //MessageBox.Show("Service Stopped!!");
+                    button1.Text = "Start";
+                    string hostname = textBox1.Text;
+                    string pass = textBox2.Text;
+
+                    cmd.runCommand("netsh wlan set hostednetwork mode=allow ssid=\"" + hostname + "\" key=\"" + pass + "\"");
+                    cmd.runCommand("netsh wlan start hostednetwork");
+                    //MessageBox.Show("Service Started!");
+                    button1.Text = "Stop";
+                }
             }
         }
 
@@ -44,8 +91,9 @@ namespace pk_Hotspot
             {
 
                 cmd.runCommand("netsh wlan stop hostednetwork");
-                MessageBox.Show("Service Stopped!");
+                //MessageBox.Show("Service Stopped!");
                 button1.Text = "Start";
+
             }
             Close();
         }
@@ -63,20 +111,34 @@ namespace pk_Hotspot
             {
                 string hostname = textBox1.Text;
                 string pass = textBox2.Text;
-
+                    saveconfigs();
                 cmd.runCommand("netsh wlan set hostednetwork mode=allow ssid=\"" + hostname + "\" key=\"" + pass + "\"");
                 cmd.runCommand("netsh wlan start hostednetwork");
-                MessageBox.Show("Service Started!");
+                    textBox1.Enabled = false;
+                    textBox2.Enabled = false;
+                    //MessageBox.Show("Service Started!");
+                    changeStatus();
+                    
                 button1.Text = "Stop";
             }
             else if (button1.Text == "Stop")
             {
-
-                cmd.runCommand("netsh wlan stop hostednetwork");
-                MessageBox.Show("Service Stopped!!");
+                    textBox1.Enabled = true;
+                    textBox2.Enabled = true;
+                    cmd.runCommand("netsh wlan stop hostednetwork");
+                    //MessageBox.Show("Service Stopped!!");
+                    changeStatus();
                 button1.Text = "Start";
             }
         }catch(Exception exx) { MessageBox.Show("Something went wrong!"); Close(); }
+        }
+
+        private void saveconfigs()
+        {
+            string[] configs = new string[2];
+            configs[0] = textBox1.Text;
+            configs[1] = textBox2.Text;
+            File.WriteAllLines("configs", configs);
         }
 
         private bool doControls()
@@ -100,7 +162,6 @@ namespace pk_Hotspot
             {
 
                 cmd.runCommand("netsh wlan stop hostednetwork");
-                MessageBox.Show("Done!");
                 button1.Text = "Start";
             }
         }
@@ -132,5 +193,89 @@ namespace pk_Hotspot
             System.Threading.Thread.Sleep(2000);
             if (File.Exists(filename)) File.Delete(filename);
         }
+
+        #region AUTOSTART
+        private void StartupAppInRegistery(bool enable)
+        {
+            if (enable)
+            {
+                Registry.SetValue(@"HKEY_LOCAL_MACHINE\SOFTWARE\Microsoft\Windows\CurrentVersion\Run", Application.ProductName,
+                    string.Format("\"{0}\" " + "-startup", Application.ExecutablePath));
+
+            }
+            else
+            {
+                Registry.SetValue(@"HKEY_LOCAL_MACHINE\SOFTWARE\Microsoft\Windows\CurrentVersion\Run", Application.ProductName, "");
+            }
+        }
+
+        private void chkAutoStartWindows_CheckedChanged(object sender, EventArgs e)
+        {
+            var auto = chkAutoStartWindows.Checked;
+            try
+            {
+                var proc = new Process();
+                proc.EnableRaisingEvents = true;
+                proc.Exited += (s, args) =>
+                {
+                    if (proc.ExitCode == 0)
+                    {
+                        StartupAppInRegistery(false);
+                    }
+                    else
+                    {
+                        StartupAppInRegistery(true);
+                    }
+                    proc.Dispose();
+                };
+
+
+                if (auto)
+                {
+                    proc.StartInfo = new ProcessStartInfo
+                    {
+                        FileName = "schtasks",
+                        Arguments =
+                            string.Format("/create /f /sc onlogon /tn pk_hotspot /rl highest /DELAY 0001:00 /tr \"{0} -startup\"",
+                                Application.ExecutablePath),
+                        UseShellExecute = true,
+                        CreateNoWindow = true,
+                        WindowStyle = ProcessWindowStyle.Hidden,
+                    };
+                }
+                else
+                {
+                    proc.StartInfo = (new ProcessStartInfo
+                    {
+                        FileName = "schtasks",
+                        Arguments = "/delete /f /tn pk_hotspot",
+                        UseShellExecute = true,
+                        CreateNoWindow = true,
+                        WindowStyle = ProcessWindowStyle.Hidden,
+                    });
+                }
+                proc.Start();
+
+            }
+            catch { }
+        }
+        #endregion
+
+        private void textBox1_TextChanged(object sender, EventArgs e)
+        {
+
+        }
+
+        private void OnLoadEvent(object sender, EventArgs e)
+        {
+            if (File.Exists("configs"))
+            {
+                string[] configs = File.ReadAllLines("configs");
+                textBox1.Text = configs[0];
+                textBox2.Text = configs[1];
+
+            }
+        }
     }
+
 }
